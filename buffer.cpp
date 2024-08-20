@@ -57,9 +57,13 @@ const char *buffer::Beginptr() const
 
 char *buffer::BeginPtr_()
 {
+    //缓冲区头部地址
     return &buffer_[0];
 }
 
 void buffer::MakeSpace_(size_t len)
 {
+    //实现空间扩容
+    if()
+
 }
