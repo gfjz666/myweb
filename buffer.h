@@ -14,7 +14,7 @@ private:
     std::atomic<size_t> readpos;  // 读下标
     std::atomic<size_t> writepos; // 写下标
 
-    const char *Beginptr() const;
+    const char *BeginPtr_() const;
     char *BeginPtr_();
     void MakeSpace_(size_t len);
 

@@ -26,7 +26,7 @@ size_t buffer::PreendableBytes() const
 
 const char *buffer::Peek() const
 {
-    return &buffer_[readpos];
+    return BeginPtr_() + readpos;
 }
 
 void buffer::EnsureWritable(size_t len)
@@ -79,7 +79,7 @@ std::string buffer::RetrieveAllTostr()
 const char *buffer::BeginWriteConst() const
 {
     // 写指针的位置
-    return &buffer_[writepos];
+    return BeginPtr_()+writepos;
 }
 
 char *buffer::BeginWrite()
@@ -93,7 +93,7 @@ void buffer::append(const char *str, size_t len)
 {
     assert(str);
     EnsureWritable(len);
-    std::copy(str, str + len, BeginWrite); // 将str放到写下标开始的地方
+    std::copy(str, str + len, BeginWrite()); // 将str放到写下标开始的地方
     HasWritten(len);                       // 移动写下标
 }
 
@@ -104,7 +104,8 @@ void buffer::append(const std::string &str)
 
 void buffer::append(const void *data, size_t len)
 {
-    append(static_cast<const char *>(data), len);
+    assert(data);
+    append(static_cast<const char*>(data), len);
 }
 
 void buffer::append(const buffer &buff)
@@ -112,18 +113,18 @@ void buffer::append(const buffer &buff)
     append(buff.Peek(), buff.ReadableBytes());
 }
 
-long buffer::ReadFd(int fd, int *Errno)
+ssize_t buffer::ReadFd(int fd, int *Errno)
 {
     char buff[65535]; // 栈区
     struct iovec iov[2];
-    size_t writeable = WritableBytes(); // 先记录能写多少
+    const size_t writeable = WritableBytes(); // 先记录能写多少
     // 分散读， 保证数据全部读完
     iov[0].iov_base = BeginWrite();
     iov[0].iov_len = writeable;
     iov[1].iov_base = buff;
     iov[1].iov_len = sizeof(buff);
 
-    long len = readv(fd, iov, 2);
+    const ssize_t len = readv(fd, iov, 2);
     if (len < 0)
     {
         *Errno = errno;
@@ -135,25 +136,24 @@ long buffer::ReadFd(int fd, int *Errno)
     else
     {
         writepos = buffer_.size();                          // 写区写满了,下标移到最后
-        append(buff, static_cast<size_t>(len - writeable)); // 剩余的长度
+        append(buff, len - writeable); // 剩余的长度
     }
     return len;
 }
 
 long buffer::WriteFd(int fd, int *Errno)
 {
-    size_t readSize = ReadableBytes();
-    long len = write(fd, Peek(), readSize);
+    ssize_t len = write(fd, Peek(), ReadableBytes());
     if (len < 0)
     {
         *Errno = errno;
         return len;
     }
-    Errno += len;
+    Retrieve(len);
     return len;
 }
 
-const char *buffer::Beginptr() const
+const char *buffer::BeginPtr_() const
 {
     // 缓冲区头部地址
     return &buffer_[0];
@@ -177,7 +177,7 @@ void buffer::MakeSpace_(size_t len)
     {
         // 内存挪动
         size_t readable = ReadableBytes();
-        std::copy(Beginptr() + readpos, Beginptr() + writepos, Beginptr());
+        std::copy(BeginPtr_() + readpos, BeginPtr_() + writepos, BeginPtr_());
         readpos = 0;
         writepos = readable;
         assert(readable == ReadableBytes());
