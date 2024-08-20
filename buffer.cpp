@@ -41,12 +41,14 @@ void buffer::EnsureWritable(size_t len)
 void buffer::HasWritten(size_t len)
 {
     // write指针向后移动
+    // 将Fd写入到readable区
     writepos += len;
 }
 
 void buffer::Retrieve(size_t len)
 {
     // read指针向后移动
+    // 从readable区域读出数据
     readpos += len;
 }
 
