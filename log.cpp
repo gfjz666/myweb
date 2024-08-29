@@ -165,7 +165,7 @@ void Log::init(int level, const char *path, const char *suffix, int maxQueueCapa
         if (!deque_) // 如果阻塞队列还未创建，则创建一个新的队列
         {
             //unique_ptr<BlockQueue<string>> newQueue(new BlockQueue<string>);
-            unique_ptr<BlockQueue<std::string>> newQueue = std::make_unique<BlockQueue<std::string>>();
+            unique_ptr<BlockQueue<std::string>> newQueue(new BlockQueue<std::string>(maxQueueCapacity));
             // 独占指针只能转移构造
             deque_ = move(newQueue);
             unique_ptr<std::thread> newThread(new thread(FlushLogThread));
