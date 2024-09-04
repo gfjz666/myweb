@@ -21,17 +21,24 @@ SqlConnPool *SqlConnPool::Instance()
 MYSQL *SqlConnPool::GetConn()
 {
     //从连接池中获取一个可用连接
-    MYSQL* conn = nullptr;
+    MYSQL* sql = nullptr;
     if(connQue_.empty())
     {
         LOG_WARN("SqlConnPool busy!");
         return nullptr;
     }
-    sem_wait(&semId_);  // -1
-    lock_guard<mutex> locker(mtx_);
-    conn = connQue_.front();
-    connQue_.pop();
-    return conn;
+    // sem_wait(&semId_);  // -1
+    // lock_guard<mutex> locker(mtx_);
+    // conn = connQue_.front();
+    // connQue_.pop();
+    // return conn;
+    sem_wait(&semId_);
+    {
+        lock_guard<mutex> locker(mtx_);
+        sql = connQue_.front();
+        connQue_.pop();
+    }
+    return sql;
 }
 void SqlConnPool::FreeConn(MYSQL *conn)
 {

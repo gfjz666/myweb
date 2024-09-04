@@ -57,6 +57,12 @@
         "unordered_set": "cpp",
         "bitset": "cpp",
         "regex": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "chrono": "cpp",
+        "charconv": "cpp",
+        "format": "cpp",
+        "iomanip": "cpp",
+        "span": "cpp",
+        "variant": "cpp"
     }
 }

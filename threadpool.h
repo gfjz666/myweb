@@ -1,5 +1,6 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
+
 #include <mutex>
 #include <condition_variable>
 #include <queue>
@@ -40,21 +41,25 @@ public:
                         else if(pool->isClosed) break;
                         else pool->cond_.wait(locker);
                     } }).detach();
+                
         }
     }
     ~threadpool()
     {
-        if (pool_)
+        if (static_cast<bool>(pool_))
         {
-            std::unique_lock<std::mutex> locker(pool_->mtx_);
-            pool_->isClosed = true;
+            {
+                std::lock_guard<std::mutex> locker(pool_->mtx_);
+                pool_->isClosed = true;
+            }
+            pool_->cond_.notify_all();
         }
-        pool_->cond_.notify_all(); // 唤醒所有的线程
     }
     template <typename T>
     void AddTask(T &&task)
     {
-        std::unique_lock<std::mutex> locker(pool_->mtx_);
+
+        std::lock_guard<std::mutex> locker(pool_->mtx_);
         pool_->tasks.emplace(std::forward<T>(task));
         pool_->cond_.notify_one();
     }

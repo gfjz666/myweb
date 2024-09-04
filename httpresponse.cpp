@@ -48,7 +48,7 @@ HTTPresponse::~HTTPresponse()
     unmapFile_();
 }
 
-void HTTPresponse::init(const std::string &srcDir, std::string &path, bool isKeepAlive, int code)
+void HTTPresponse::Init(const std::string &srcDir, std::string &path, bool isKeepAlive, int code)
 {
     assert(srcDir != "");
     if (mmFile_)

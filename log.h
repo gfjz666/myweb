@@ -14,7 +14,7 @@ class Log
 {
 public:
     // 初始化日志实例（阻塞队列最大容量、日志保存路径、日志文件后缀）
-    void init(int level, const char *path = "./log", const char *suffix = ".log", int maxQueueCapacity = 1024);
+    void init(int level, const char *path = "./bin", const char *suffix = ".log", int maxQueueCapacity = 1024);
     static Log *Instance();       // 单例模式，为该类的唯一对象
     static void FlushLogThread(); // 异步写日志公有方法
 

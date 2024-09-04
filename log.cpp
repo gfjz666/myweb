@@ -101,36 +101,35 @@ void Log::write(int level, const char *format, ...)
         fclose(fp_);
         fp_ = fopen(newFile, "a");
         assert(fp_ != nullptr);
+    }
+    // 日志文件先写入buffer
+    {
+        unique_lock<mutex> locker(mtx_);
+        lineCount_++;
+        int n = snprintf(buff_.BeginWrite(), 128, "%d-%02d-%02d %02d:%02d:%02d.%06ld ",
+                         t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+                         t.tm_hour, t.tm_min, t.tm_sec, now.tv_usec);
 
-        // 日志文件先写入buffer
+        buff_.HasWritten(n);
+        AppendLogLevelTitle_(level);
+        va_start(vaList, format);
+        int m = vsnprintf(buff_.BeginWrite(), buff_.WritableBytes(), format, vaList);
+        va_end(vaList);
+
+        buff_.HasWritten(m);
+        buff_.append("\n\0", 2);
+
+        if (isAsync_ && deque_ && !deque_->full())
         {
-            unique_lock<mutex> locker(mtx_);
-            lineCount_++;
-            int n = snprintf(buff_.BeginWrite(), 128, "%d-%02d-%02d %02d:%02d:%02d.%06ld ",
-                             t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-                             t.tm_hour, t.tm_min, t.tm_sec, now.tv_usec);
-
-            buff_.HasWritten(n);
-            AppendLogLevelTitle_(level);
-            va_start(vaList, format);
-            int m = vsnprintf(buff_.BeginWrite(), buff_.WritableBytes(), format, vaList);
-            va_end(vaList);
-
-            buff_.HasWritten(m);
-            buff_.append("\n\0", 2);
-
-            if (isAsync_ && deque_ && !deque_->full())
-            {
-                // 异步则放进队列里面
-                deque_->push_back(buff_.RetrieveAllTostr());
-            }
-            else
-            {
-                // 同步则直接存进文件
-                fputs(buff_.Peek(), fp_);
-            }
-            buff_.RetrieveAll(); // 清空buff
+            // 异步则放进队列里面
+            deque_->push_back(buff_.RetrieveAllTostr());
         }
+        else
+        {
+            // 同步则直接存进文件
+            fputs(buff_.Peek(), fp_);
+        }
+        buff_.RetrieveAll(); // 清空buff
     }
 }
 void Log::flush()
@@ -164,9 +163,9 @@ void Log::init(int level, const char *path, const char *suffix, int maxQueueCapa
         isAsync_ = true;
         if (!deque_) // 如果阻塞队列还未创建，则创建一个新的队列
         {
-            //unique_ptr<BlockQueue<string>> newQueue(new BlockQueue<string>);
-            unique_ptr<BlockQueue<std::string>> newQueue(new BlockQueue<std::string>(maxQueueCapacity));
-            // 独占指针只能转移构造
+            unique_ptr<BlockQueue<string>> newQueue(new BlockQueue<string>);
+            // unique_ptr<BlockQueue<std::string>> newQueue(new BlockQueue<std::string>(maxQueueCapacity));
+            //  独占指针只能转移构造
             deque_ = move(newQueue);
             unique_ptr<std::thread> newThread(new thread(FlushLogThread));
             writeThread_ = move(newThread);
@@ -174,6 +173,7 @@ void Log::init(int level, const char *path, const char *suffix, int maxQueueCapa
     }
     else
         isAsync_ = false;
+
     lineCount_ = 0;
     time_t timer = time(nullptr);
     struct tm *sysTime = localtime(&timer);
@@ -182,6 +182,7 @@ void Log::init(int level, const char *path, const char *suffix, int maxQueueCapa
     char fileName[LOG_NAME_LEN] = {0};
     snprintf(fileName, LOG_NAME_LEN - 1, "%s/%04d_%02d_%02d%s",
              path_, t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, suffix_);
+
     toDay_ = t.tm_mday;
     {
         lock_guard<mutex> locker(mtx_);

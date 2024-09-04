@@ -20,7 +20,6 @@ void HttpRequest::Init()
     header_.clear();
     post_.clear();
 }
-
 bool HttpRequest::parse(buffer &buff)
 {
     // 主解析函数，从给定的 buffer 对象中读取数据并解析 HTTP 请求
@@ -155,7 +154,7 @@ void HttpRequest::ParsePath_()
 {
     // 处理路径
     if (path_ == "/")
-        path_ = "/index.html";
+        path_ = "/welcome.html";
     else
     {
         for (auto &item : DEFAULT_HTML)
@@ -181,7 +180,7 @@ void HttpRequest::ParsePost_()
             LOG_DEBUG("Tag:%d", tag);
             if (tag == 0 || tag == 1)
             {
-                bool isLogin = (tag == 1); // 为1则是登录
+                bool isLogin = (tag == 1);
                 if (UserVerify(post_["username"], post_["password"], isLogin))
                 {
                     path_ = "/welcome.html";
@@ -243,14 +242,14 @@ void HttpRequest::ParseFromUrlencoded_()
 
 bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bool isLogin)
 {
-    //验证登陆和注册
+    // 验证登陆和注册
     if (name == "" || pwd == "")
     {
         return false;
     }
     LOG_INFO("Verify name:%s pwd:%s", name.c_str(), pwd.c_str());
     MYSQL *sql;
-    SqlConnRAII temVal(&sql, SqlConnPool::Instance()); //如果是匿名对象会立马析构!!
+    SqlConnRAII temVal(&sql, SqlConnPool::Instance()); // 如果是匿名对象会立马析构!!
     assert(sql);
 
     bool flag = false;
@@ -305,8 +304,8 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
     if (!isLogin && flag == true)
     {
         LOG_DEBUG("regirster!");
-        //bzero(order, 256);
-        memset(order,0,sizeof(order));
+        // bzero(order, 256);
+        memset(order, 0, sizeof(order));
         snprintf(order, 256, "INSERT INTO user(username, password) VALUES('%s','%s')", name.c_str(), pwd.c_str());
         LOG_DEBUG("%s", order);
         if (mysql_query(sql, order))
@@ -316,7 +315,7 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
         }
         flag = true;
     }
-    //SqlConnPool::Instance()->FreeConn(sql);
+    // SqlConnPool::Instance()->FreeConn(sql);
     LOG_DEBUG("UserVerify success!!");
     return flag;
 }

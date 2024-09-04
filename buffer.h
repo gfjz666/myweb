@@ -49,7 +49,7 @@ public:
     void append(const buffer &buff);
 
     // 从socket通信的对端，接收数据到缓冲区
-    long ReadFd(int fd, int *Errno);
+    ssize_t ReadFd(int fd, int *Errno);
     // 将缓冲区中的数据，发送到socket通信的对端
-    long WriteFd(int fd, int *Errno);
+    ssize_t WriteFd(int fd, int *Errno);
 };

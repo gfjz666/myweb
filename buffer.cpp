@@ -115,6 +115,7 @@ void buffer::append(const buffer &buff)
 
 ssize_t buffer::ReadFd(int fd, int *Errno)
 {
+    //fd读到缓冲区
     char buff[65535]; // 栈区
     struct iovec iov[2];
     const size_t writeable = WritableBytes(); // 先记录能写多少
@@ -141,8 +142,9 @@ ssize_t buffer::ReadFd(int fd, int *Errno)
     return len;
 }
 
-long buffer::WriteFd(int fd, int *Errno)
+ssize_t buffer::WriteFd(int fd, int *Errno)
 {
+    //写进fd
     ssize_t len = write(fd, Peek(), ReadableBytes());
     if (len < 0)
     {

@@ -12,7 +12,7 @@ class HTTPresponse
 public:
     HTTPresponse();
     ~HTTPresponse();
-    void init(const std::string &srcDir, std::string &path, bool isKeepAlive = false, int code = -1);
+    void Init(const std::string &srcDir, std::string &path, bool isKeepAlive = false, int code = -1);
     void makeResponse(buffer &buff);
     void unmapFile_();
     char *file();
